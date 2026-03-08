@@ -2,14 +2,20 @@
 
 import { useId } from "react";
 import css from "./NoteForm.module.css";
-import { Formik, Form, Field, ErrorMessage } from "formik";
+import { Formik, Form, Field, ErrorMessage, FormikHelpers } from "formik";
 import * as Yup from "yup";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import type { Note } from "@/types/note";
 import { createNote } from "@/lib/api";
 
-const initialValues: Omit<Note, "id" | "createdAt" | "updatedAt"> = {
+interface FormValues {
+  title: string;
+  tag: string;
+  content: string;
+}
+
+const initialValues: FormValues = {
   title: "",
   content: "",
   tag: "Todo",
@@ -35,18 +41,30 @@ export default function NoteForm({ onClose }: NoteFormProps) {
 
   const queryClient = useQueryClient();
 
-  const createMutation = useMutation({
-    mutationFn: createNote,
-    onSuccess: () => {
+  const handleSubmit = (
+    values: FormValues,
+    { resetForm }: FormikHelpers<FormValues>,
+  ) => {
+    mutate(values, {
+      onSuccess: () => {
+        resetForm();
+        onClose();
+      },
+    });
+  };
+
+  const { mutate } = useMutation<Note, Error, FormValues>({
+    mutationFn: (values) => createNote({ noteData: values }),
+    onSuccess() {
       queryClient.invalidateQueries({ queryKey: ["notes"] });
-      onClose();
     },
+    onError() {},
   });
 
   return (
     <Formik
       initialValues={initialValues}
-      onSubmit={(values) => createMutation.mutate(values)}
+      onSubmit={handleSubmit}
       validationSchema={OrderFormSchema}
     >
       <Form className={css.form}>
