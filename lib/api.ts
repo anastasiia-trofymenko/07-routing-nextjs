@@ -13,20 +13,20 @@ interface FetchNotesResponse {
   totalPages: number;
 }
 
-interface FetchNotesParams {
-  page: number;
+export interface FetchNotesParams {
   search: string;
+  page: number;
+  tag?: string;
 }
 
 //get
-export const fetchNotes = async (
-  params: FetchNotesParams,
-): Promise<FetchNotesResponse> => {
+export const fetchNotes = async (search: string, page: number, tag: string) => {
   const response = await axiosInstance.get<FetchNotesResponse>("/notes", {
     params: {
-      page: params.page,
+      page: page,
+      search: search,
       perPage: 12,
-      search: params.search,
+      ...(tag.toLowerCase() !== "all" ? { tag } : {}),
     },
   });
   return response.data;

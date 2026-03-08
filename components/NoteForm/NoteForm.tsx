@@ -1,10 +1,12 @@
+"use client";
+
 import { useId } from "react";
 import css from "./NoteForm.module.css";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import type { Note } from "../../types/note";
+import type { Note } from "@/types/note";
 import { createNote } from "@/lib/api";
 
 const initialValues: Omit<Note, "id" | "createdAt" | "updatedAt"> = {

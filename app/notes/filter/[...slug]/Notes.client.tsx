@@ -10,38 +10,49 @@ import NoteForm from "@/components/NoteForm/NoteForm";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { fetchNotes } from "@/lib/api";
-// import { useSearchParams } from "next/navigation";
-import { useDebounce } from "use-debounce";
+import { useDebouncedCallback } from "use-debounce";
 
-export default function NotesClient() {
-  // const searchParams = useSearchParams();
+interface NotesClientProps {
+  tag: string;
+}
 
+export default function NotesClient({ tag }: NotesClientProps) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [debouncedSearch] = useDebounce(search, 300);
+  // const [debouncedSearch] = useDebounce(search, 300);
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["notes", page, debouncedSearch],
-    queryFn: () => fetchNotes({ page, search: debouncedSearch }),
+  const debouncedSetSearchQuery = useDebouncedCallback((value: string) => {
+    setSearch(value);
+  }, 500);
+
+  const handleSearch = (value: string) => {
+    setPage(1);
+    debouncedSetSearchQuery(value);
+  };
+
+  // const toggleModal = () => setIsModalOpen((prev) => !prev);
+
+  const { data, isLoading, isError, isPlaceholderData } = useQuery({
+    queryKey: ["notes", search, page, tag],
+    queryFn: () => fetchNotes(search, page, tag),
     placeholderData: keepPreviousData,
   });
 
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
-        <SearchBox
-          onSearch={(value) => {
-            setSearch(value);
-            setPage(1);
-          }}
-        />
+        <SearchBox onSearch={handleSearch} />
 
         {data && data.totalPages > 1 && (
           <Pagination
             totalPages={data.totalPages}
             currentPage={page}
-            onPageChange={setPage}
+            onPageChange={(selected) => {
+              if (!isPlaceholderData) {
+                setPage(selected);
+              }
+            }}
           />
         )}
         <button className={css.button} onClick={() => setIsModalOpen(true)}>
